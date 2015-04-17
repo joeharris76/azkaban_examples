@@ -1,0 +1,3 @@
+type=command
+command=echo "reuse_2nd_command.job"
+dependencies=reuse_1st_command

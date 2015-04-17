@@ -1,0 +1,2 @@
+type=command
+command=echo "reuse_1st_command.job"

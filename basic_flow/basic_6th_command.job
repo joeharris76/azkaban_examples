@@ -1,0 +1,4 @@
+type=command
+command=echo "basic_6th_command.job"
+dependencies=basic_4th_command
+

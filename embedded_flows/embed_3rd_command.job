@@ -1,0 +1,2 @@
+type=command
+command=echo "embed_3rd_command.job"

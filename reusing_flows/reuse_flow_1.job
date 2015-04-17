@@ -1,0 +1,4 @@
+# This flow is embedded in flow_0
+type=flow
+flow.name=reuse_4th_command
+dependencies=reuse_2nd_command
