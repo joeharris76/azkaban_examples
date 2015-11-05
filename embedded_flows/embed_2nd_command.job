@@ -1,3 +1,0 @@
-type=command
-command=echo "embed_2nd_command.job"
-dependencies=embed_1st_command

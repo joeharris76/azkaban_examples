@@ -29,31 +29,41 @@ The smallest unit of work in Azkaban is a `job`, a text file with a `.job` exten
     dependencies=run_this_job_first
 ```
 
-
 ## Projects
 ### Basic Flow
-This is a very simple flow using direct depndencies and no subflows.
+This flow uses direct depndencies and no subflows. It demonstrates the way Azkaban creates the flow sequence by **working backwards** from a job that *no other jobs depend on*. 
 
 ![](./basic_flow/basic_flow.png)
 
-The jobs `3rd_command`, `7th_command` and `8th_command` depend directly on `2nd_command`. `basic_flow` is a `noop` job that **creates the entire flow** by depending direclty on the "final" jobs `5th_command`, `6th_command`, `7th_command` and `8th_command`. 
+The "final" job `basic_flow` is a `noop` job that nothing depends on. It **creates the entire flow** by depending directly on jobs `step_5.cmd`, `step_6.cmd`, `step_7.cmd` and `step_8.cmd`. The jobs `step_3.cmd`, `step_7.cmd` and `step_8.cmd` depend on `step_2.cmd`. Finally `step_2.cmd`  depends on `step_1.cmd` which "starts" the flow because it depends on nothing else.
 
-### Embedded Flows
-This flow contains an explicitly named "outer" flow, embedded flows and subflows. The embedded flows are listed separately in project's the `Flows` tab and can each be run on their own. 
+### Template Flows
+Azkaban allows flows to be embedded in other flows and to be embedded multiple times. This feature is very useful for removing duplication from your projects by using "template" workflows.
 
-![](./embedded_flows/embedded_flows_in_the_gui.png)
+Often you need to run the same logic many times with differing inputs. For instance: download > process > re-upload a file, update > delete > insert a table, etc. Templates keep the process logic in a single place. You embed the template as a subflow in your workflows and pass in custom properties that specify the work to be done.
 
-For each flow the large text value is the name of the job and the subtext value under it is the `flow.name` parameter from the job. Note that `flow.name` defines the *final* job in the flow. The flow structure is defined backwards from that job by the dependencies of each job. 
+![](./template_flow/template_flow.png)
 
-![](./embedded_flows/embedded_flows.png)
+Define a template job:
+* Properties are passed into the command using the `${variable}` format
+* I like to prefix templates with an `_` (underscore) to clarify their purpose.
+     * This is necessary because template workflows are visible in the web front end.
+```
+    # _template.job
+    type=command
+    command=echo "Variable 1: ${custom_1} | Variable 2: ${custom_2}"
+```
 
-### Reusing Flows 
-This flow builds on the embeded flows example by reusing the `flow_2` subflow multiple times. 
-
-Note that reused flows cannot have any direct dependencies. This means, in practice, that reusing a subflow will often require embedding it as the first job within another subflow which declares any required dependencies. In this example `flow_2` takes no dependencies but `flow_1` and `flow_3` both depend on `2nd_command`
-
-![](./reusing_flows/reusing_flows.png)
-
+Embed the template:
+* The `flow.name` key defines what is embedded. 
+* Custom properties are passed to the template by defining them as additional keys. 
+```
+    # workflow.job
+    type=flow
+    flow.name=_template
+    custom_1=val1
+    custom_2=val2
+```
 
 
 ## Azkaban CLI / DSL
@@ -61,28 +71,31 @@ Note that reused flows cannot have any direct dependencies. This means, in pract
 
 The CLI might be better described as a ["domain specific language"](https://en.wikipedia.org/wiki/Domain-specific_language) (DSL) for Azkaban. It allows you to create Azkaban projects and workflows in a very compact format and to use Python code to manipulate the workflows.
 
-![`jobs.py` : Example workflows in Azkaban CLI syntax](./azkaban_cli/jobs.py.png)
-
+### Creating and Uploading a Project
 If you have a basic familiarity with Python (or a similar language) you may find the CLI to be much more productive than manually creating and uploading workflows that consist of hundreds of jobs. The following example commands look for the default jobs file `jobs.py` and assumes you have defined a default Azkaban server in the `~/.azkabanrc` settings file.
+
+![`jobs.py` : The example workflows specified in Azkaban CLI syntax.](./azkaban_cli/jobs.py.png)
 
 Create the project ( `-c` flag) and upload to Azkaban:
 ```
-azkaban build -c
- > Project azkaban_examples successfully built and uploaded (id: 1, size: 6.8kB, upload: 1).
- > Details at https://yourazkabanserver.com:8443/manager?project=azkaban_examples
+    azkaban build -c
+     > Project azkaban_examples successfully built and uploaded (id: 1, size: 6.8kB, upload: 1).
+     > Details at https://yourazkabanserver.com:8443/manager?project=azkaban_examples
 ```
 
+### Running a Project from the CLI
 Run the "reusing_flows" workflow immediately:
 ```
-azkaban run -k reusing_flows
- > Flow reusing_flows successfully submitted (execution id: 999).
- > Details at https://yourazkabanserver.com:8443:8443/executor?execid=999
+    azkaban run -k reusing_flows
+     > Flow reusing_flows successfully submitted (execution id: 999).
+     > Details at https://yourazkabanserver.com:8443:8443/executor?execid=999
 ```
+
 
 <!-- Schedule the "reusing_flows" workflow to run daily at midnight and kill the worfklow on first failure and send alerts to `joe@example.com`:
 ```
-azkaban schedule -k -e joe@example.com -s 1d -t 00:00:00.000 reusing_flows
- > Project azkaban_examples successfully built and uploaded (id: 7, size: 6.8kB, upload: 1).
- > Details at https://yourazkabanserver.com:8443/manager?project=azkaban_examples
+    azkaban schedule -k -e joe@example.com -s 1d -t 00:00:00.000 reusing_flows
+     > Project azkaban_examples successfully built and uploaded (id: 7, size: 6.8kB, upload: 1).
+     > Details at https://yourazkabanserver.com:8443/manager?project=azkaban_examples
 ``` -->
 

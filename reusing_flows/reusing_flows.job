@@ -1,3 +1,0 @@
-# This is the root flow
-type=flow
-flow.name=reuse_noop_0

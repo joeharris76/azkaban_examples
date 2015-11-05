@@ -1,2 +1,2 @@
 type=noop
-dependencies=basic_5th_command,basic_6th_command,basic_7th_command,basic_8th_command
+dependencies=basic_step_5.cmd,basic_step_6.cmd,basic_step_7.cmd,basic_step_8.cmd

@@ -1,3 +1,0 @@
-type=command
-command=echo "basic_4th_command.job"
-dependencies=basic_3rd_command

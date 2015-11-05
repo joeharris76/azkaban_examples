@@ -1,0 +1,2 @@
+type=command
+command=echo "job: basic_step_1.cmd"

@@ -1,3 +1,0 @@
-type=command
-command=echo "reuse_8th_command.job"
-dependencies=reuse_flow_2

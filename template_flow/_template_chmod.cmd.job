@@ -1,0 +1,2 @@
+type=command
+command=chmod 777 _echo.sh

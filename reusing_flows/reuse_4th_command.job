@@ -1,3 +1,0 @@
-type=command
-command=echo "reuse_4th_command.job"
-dependencies=reuse_3rd_command

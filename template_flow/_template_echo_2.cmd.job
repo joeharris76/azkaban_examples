@@ -1,0 +1,3 @@
+type=command
+command=./_echo.sh "echo_2" ${project_1} ${project_2} ${project_3} ${custom_1} ${custom_2}
+dependencies=_template_echo_1.cmd

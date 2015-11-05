@@ -1,4 +1,0 @@
-# This flow is embedded in flow_0
-type=flow
-flow.name=embed_flow_2
-dependencies=embed_2nd_command

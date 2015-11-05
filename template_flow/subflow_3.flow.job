@@ -1,0 +1,5 @@
+type=flow
+flow.name=_template
+custom_1=subflow3-val1
+custom_2=subflow3-val2
+dependencies=start.noop

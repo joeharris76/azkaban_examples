@@ -1,58 +1,56 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-"""Azkaban example projects configuration script.
-
-Azkaban CLI syntax definition to configure all examples in this project
-
+"""
+  Azkaban example projects configuration script.
+   • Azkaban CLI syntax definition to configure all examples in this project
 """
 
 from azkaban import Job, Project
 
-project = Project('azkaban_examples')
+PROJECT = Project('azkaban_examples', root=__file__)
+# Project level properties declared here are visible to all jobs.
+PROJECT.properties = {
+  'project_1': 'project-val1'
+}
 
-# `basic_flow` example
-project.add_job('basic_1st_command', Job({'type': 'command', 'command': 'echo "basic_1st_command.job"'}))
-project.add_job('basic_2nd_command', Job({'type': 'command', 'command': 'echo "basic_2nd_command.job"', 'dependencies': 'basic_1st_command'}))
-project.add_job('basic_3rd_command', Job({'type': 'command', 'command': 'echo "basic_3rd_command.job"', 'dependencies': 'basic_2nd_command'}))
-project.add_job('basic_4th_command', Job({'type': 'command', 'command': 'echo "basic_4th_command.job"', 'dependencies': 'basic_3rd_command'}))
-project.add_job('basic_5th_command', Job({'type': 'command', 'command': 'echo "basic_5th_command.job"', 'dependencies': 'basic_4th_command'}))
-project.add_job('basic_6th_command', Job({'type': 'command', 'command': 'echo "basic_6th_command.job"', 'dependencies': 'basic_4th_command'}))
-project.add_job('basic_7th_command', Job({'type': 'command', 'command': 'echo "basic_7th_command.job"', 'dependencies': 'basic_2nd_command'}))
-project.add_job('basic_8th_command', Job({'type': 'command', 'command': 'echo "basic_8th_command.job"', 'dependencies': 'basic_2nd_command'}))
-project.add_job('basic_flow'       , Job({'type': 'noop'   , 'dependencies': 'basic_5th_command,basic_6th_command,basic_7th_command,basic_8th_command'}))
+JOBS = {
+  # `basic_flow` example
+  'basic_step_1.cmd':  Job({'type': 'command', 'command': 'echo "job: basic_step_1.cmd"'}),
+  'basic_step_2.cmd':  Job({'type': 'command', 'command': 'echo "job: basic_step_2.cmd"', 'dependencies': 'basic_step_1.cmd'}),
+  'basic_step_3.cmd':  Job({'type': 'command', 'command': 'echo "job: basic_step_3.cmd"', 'dependencies': 'basic_step_2.cmd'}),
+  'basic_step_4.cmd':  Job({'type': 'command', 'command': 'echo "job: basic_step_4.cmd"', 'dependencies': 'basic_step_3.cmd'}),
+  'basic_step_5.cmd':  Job({'type': 'command', 'command': 'echo "job: basic_step_5.cmd"', 'dependencies': 'basic_step_4.cmd'}),
+  'basic_step_6.cmd':  Job({'type': 'command', 'command': 'echo "job: basic_step_6.cmd"', 'dependencies': 'basic_step_4.cmd'}),
+  'basic_step_7.cmd':  Job({'type': 'command', 'command': 'echo "job: basic_step_7.cmd"', 'dependencies': 'basic_step_2.cmd'}),
+  'basic_step_8.cmd':  Job({'type': 'command', 'command': 'echo "job: basic_step_8.cmd"', 'dependencies': 'basic_step_2.cmd'}),
+  'basic_flow':        Job({'type': 'noop'   , 'dependencies': 'basic_step_5.cmd,basic_step_6.cmd,basic_step_7.cmd,basic_step_8.cmd'}),
+  # `template_flow` example
+  #   • Demonstrates using one flow as a "template" that is embedded in another flow and reused multiple times.
+  #   • The only work performed by job in this example template is to echo out the variables it receives to the log.
+  #     NOTE: We have to `chmod 777` our script to make sure Azkaban can run it.
+  '_template_chmod.cmd':  Job({'type': 'command', 'command': 'chmod 777 _echo.sh'}),
+  '_template_echo_1.cmd': Job({'type': 'command', 'command': './_echo.sh "echo_1" ${project_1} ${custom_1} ${custom_2}', 'dependencies': '_template_chmod.cmd'}),
+  '_template_echo_2.cmd': Job({'type': 'command', 'command': './_echo.sh "echo_2" ${project_1} ${custom_1} ${custom_2}', 'dependencies': '_template_echo_1.cmd'}),
+  '_template':            Job({'type': 'noop'   , 'dependencies': '_template_echo_2.cmd'}),
+  #   • Each of the following subflows embeds *ALL* of the steps from `_template` using the `flow.name` key.
+  #   • Each defines `custom_1` and `custom_2` keys which are passed as variables ${custom_1} and ${custom_2} to `_template` during execution.
+  'start.noop':           Job({'type': 'noop'}),
+  'subflow_1.flow':       Job({'type': 'flow', 'flow.name': '_template', 'dependencies': 'start.noop', 'custom_1': 'subflow1-val1', 'custom_2': 'subflow1-val2'}),
+  'subflow_2.flow':       Job({'type': 'flow', 'flow.name': '_template', 'dependencies': 'start.noop', 'custom_1': 'subflow2-val1', 'custom_2': 'subflow2-val2'}),
+  'subflow_3.flow':       Job({'type': 'flow', 'flow.name': '_template', 'dependencies': 'start.noop', 'custom_1': 'subflow3-val1', 'custom_2': 'subflow3-val2'}),
+  'subflow_4.flow':       Job({'type': 'flow', 'flow.name': '_template', 'dependencies': 'start.noop', 'custom_1': 'subflow4-val1', 'custom_2': 'subflow4-val2'}),
+  'workflow':             Job({'type': 'noop', 'dependencies': 'subflow_1.flow,subflow_2.flow,subflow_3.flow,subflow_4.flow'})
+}
 
-# `embedded_flows` example
-project.add_job('embed_1st_command', Job({'type': 'command', 'command': 'echo "embed_1st_command.job"'}))
-project.add_job('embed_2nd_command', Job({'type': 'command', 'command': 'echo "embed_2nd_command.job"', 'dependencies': 'embed_1st_command'}))
-project.add_job('embed_3rd_command', Job({'type': 'command', 'command': 'echo "embed_3rd_command.job"'}))
-project.add_job('embed_4th_command', Job({'type': 'command', 'command': 'echo "embed_4th_command.job"', 'dependencies': 'embed_3rd_command'}))
-project.add_job('embed_5th_command', Job({'type': 'command', 'command': 'echo "embed_5th_command.job"'}))
-project.add_job('embed_6th_command', Job({'type': 'command', 'command': 'echo "embed_6th_command.job"'}))
-project.add_job('embed_7th_command', Job({'type': 'command', 'command': 'echo "embed_7th_command.job"'}))
-project.add_job('embed_8th_command', Job({'type': 'command', 'command': 'echo "embed_8th_command.job"'}))
-project.add_job('embed_flow_1'     , Job({'type': 'flow'   , 'flow.name': 'embed_flow_2', 'dependencies': 'embed_2nd_command'}))
-project.add_job('embed_flow_2'     , Job({'type': 'flow'   , 'flow.name': 'embed_noop_1', 'dependencies': 'embed_4th_command'}))
-project.add_job('embed_flow_3'     , Job({'type': 'flow'   , 'flow.name': 'embed_noop_2', 'dependencies': 'embed_2nd_command'}))
-project.add_job('embed_noop_0'     , Job({'type': 'noop'   , 'dependencies': 'embed_flow_1,embed_flow_3'}))
-project.add_job('embed_noop_1'     , Job({'type': 'noop'   , 'dependencies': 'embed_5th_command,embed_6th_command'}))
-project.add_job('embed_noop_2'     , Job({'type': 'noop'   , 'dependencies': 'embed_7th_command,embed_8th_command'}))
-project.add_job('embedded_flows'   , Job({'type': 'flow'   , 'flow.name': 'embed_noop_0'}))
+for name, job in JOBS.items():
+  PROJECT.add_job(name, job)
 
-# `reusing_flows` example
-project.add_job('reuse_1st_command', Job({'type': 'command', 'command': 'echo "reuse_1st_command.job"'}))
-project.add_job('reuse_2nd_command', Job({'type': 'command', 'command': 'echo "reuse_2nd_command.job"', 'dependencies': 'reuse_1st_command'}))
-project.add_job('reuse_3rd_command', Job({'type': 'command', 'command': 'echo "reuse_3rd_command.job"', 'dependencies': 'reuse_flow_2'}))
-project.add_job('reuse_4th_command', Job({'type': 'command', 'command': 'echo "reuse_4th_command.job"', 'dependencies': 'reuse_3rd_command'}))
-project.add_job('reuse_5th_command', Job({'type': 'command', 'command': 'echo "reuse_5th_command.job"'}))
-project.add_job('reuse_6th_command', Job({'type': 'command', 'command': 'echo "reuse_6th_command.job"'}))
-project.add_job('reuse_7th_command', Job({'type': 'command', 'command': 'echo "reuse_7th_command.job"', 'dependencies': 'reuse_flow_2'}))
-project.add_job('reuse_8th_command', Job({'type': 'command', 'command': 'echo "reuse_8th_command.job"', 'dependencies': 'reuse_flow_2'}))
-project.add_job('reuse_flow_1'     , Job({'type': 'flow'   , 'flow.name': 'reuse_4th_command', 'dependencies': 'reuse_2nd_command'}))
-project.add_job('reuse_flow_2'     , Job({'type': 'flow'   , 'flow.name': 'reuse_noop_1'}))
-project.add_job('reuse_flow_3'     , Job({'type': 'flow'   , 'flow.name': 'reuse_noop_2', 'dependencies': 'reuse_2nd_command'}))
-project.add_job('reuse_noop_0'     , Job({'type': 'noop'   , 'dependencies': 'reuse_flow_1,reuse_flow_3'}))
-project.add_job('reuse_noop_1'     , Job({'type': 'noop'   , 'dependencies': 'reuse_5th_command,reuse_6th_command'}))
-project.add_job('reuse_noop_2'     , Job({'type': 'noop'   , 'dependencies': 'reuse_7th_command,reuse_8th_command'}))
-project.add_job('reusing_flows'    , Job({'type': 'flow'   , 'flow.name': 'reuse_noop_0'}))
+# The CLI requires any non-job files to be explicitly included. 
+# Must declare the `root` in the project in order for this to work. 
+FILES = {
+  './_echo.sh': '_echo.sh'
+}
 
+for file, name in FILES.items():
+  PROJECT.add_file(file, name)
